@@ -1,25 +1,26 @@
 pipeline {
     agent any
-    
+
     stages {
         stage('Checkout') {
             steps {
-                echo 'Pulling code from GitHub...'
-                // Jenkins does the "git checkout" automatically in this mode!
-                sh 'ls -la' // List files to prove we are inside the repo
+                checkout scm
             }
         }
-        stage('Build') {
+        stage('Verify Docker') {
             steps {
-                echo 'Building...'
-                sh 'echo "Compiling code..."'
+                echo 'Checking Docker version...'
+                sh 'docker --version' 
             }
         }
-        stage('Test') {
+        stage('Build Image') {
             steps {
-                echo 'Testing...'
-                sh 'echo "All tests passed!"'
+                echo 'Building Docker Image...'
+                // This builds the image using the Dockerfile you added in Level 3
+                sh 'docker build -t my-app:v1 .'
             }
         }
     }
 }
+
+
