@@ -40,8 +40,11 @@ pipeline {
 
         stage('Deploy to Server') {
             steps {
-                echo 'Deploying to Local Server...'
+         
                 script {
+
+                    input: 'Deploy to Production?' , ok: 'Yes, Go Ahead!'
+                    echo 'Deploying To Production Server...'
                     // 1. Stop the old container (if running)
                     // "|| true" prevents the pipeline from failing if the container doesn't exist yet
                     sh "docker stop $CONTAINER_NAME || true"
