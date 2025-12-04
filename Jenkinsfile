@@ -54,15 +54,4 @@ pipeline {
             }
         }
     }
-
-    }
-    
-    post {
-        always {
-            // Cleanup: Remove the image from local Jenkins storage to save space
-            sh "docker logout"
-        }
-    }
 }
-
-
