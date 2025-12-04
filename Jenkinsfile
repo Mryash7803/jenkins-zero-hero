@@ -6,6 +6,7 @@ pipeline {
         DOCKERHUB_USERNAME = 'mryashdoc' 
         IMAGE_NAME = 'my-app'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
+        CONTAINER_TAG = 'my-prod-website'
     }
 
     stages {
