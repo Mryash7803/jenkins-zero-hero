@@ -1,2 +1,3 @@
-FROM alpine:latest
-CMD echo "Hello from inside the Docker container built by Jenkins!"
+FROM nginx:alpine
+# This replaces the default Nginx page with our custom message
+RUN echo "<h1>Hello Yash! This is Version 1</h1>" > /usr/share/nginx/html/index.html
