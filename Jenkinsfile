@@ -56,6 +56,23 @@ pipeline {
                     sh "docker run -d -p 8090:80 --name $CONTAINER_NAME $DOCKERHUB_USERNAME/$IMAGE_NAME:latest"
                 }
             }
-        }
-    }
-}
+     post { 
+
+         success {
+             mail(
+                 body: "Great News! Build #${env.BUILD_NUMBER} for ${env.JOB_NAME} was SUCCESSFUL.\n\ncheck the deshboard here: ${env.BUILD_URL}",
+                 subject: "SUCCESS: Jenkins Build #${env.BUILD_NUMBER}",
+                 to: "yashsingar7@gmail.com" 
+              )
+
+          }
+          failure {
+              mail(
+                 body: "Alert! Build #${env.BUILD_NUMBER} for ${env.JOB_NAME} FAILED.\n\nPlease check logs here: ${env.BUILD_URL}",
+                 subject: "FAILURE: Jenkins Build #${env.BUILD_NUMBER}",
+                 to: "yashsingar7@gmail.com
+              )
+
+           }
+      
+       }        
