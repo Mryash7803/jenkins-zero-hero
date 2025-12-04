@@ -1,3 +1,2 @@
 FROM nginx:alpine
-# This replaces the default Nginx page with our custom message
-RUN echo "<h1>Hello Yash! This is Version 1</h1>" > /usr/share/nginx/html/index.html
+RUN echo "<h1>This build was triggered automatically! Version 3</h1>" > /usr/share/nginx/html/index.html
