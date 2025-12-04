@@ -1,11 +1,17 @@
 pipeline {
     agent any
-
+    
     environment {
-        DOCKERHUB_USERNAME = 'mryashdoc'
+        // --- CONFIGURATION ---
+        // 1. REPLACE WITH YOUR DOCKER HUB USERNAME
+        DOCKERHUB_USERNAME = 'your-dockerhub-username' 
+        
         IMAGE_NAME = 'my-app'
         IMAGE_TAG = "${env.BUILD_NUMBER}"
         CONTAINER_NAME = 'my-prod-website'
+        
+        // 2. REPLACE WITH YOUR EMAIL ADDRESS
+        USER_EMAIL = 'your-email@gmail.com'
     }
 
     stages {
@@ -14,61 +20,68 @@ pipeline {
                 checkout scm
             }
         }
-
+        
         stage('Build Image') {
             steps {
                 echo 'Building Docker Image...'
-                sh "docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG ."
-                sh "docker build -t $DOCKERHUB_USERNAME/$IMAGE_NAME:latest ."
+                // Build the image tagged with the build number
+                sh "docker build -t ${env.DOCKERHUB_USERNAME}/${env.IMAGE_NAME}:${env.IMAGE_TAG} ."
+                // Also tag it 'latest' for the production deployment
+                sh "docker build -t ${env.DOCKERHUB_USERNAME}/${env.IMAGE_NAME}:latest ."
             }
         }
-
+        
         stage('Push to Docker Hub') {
             steps {
-                echo 'Pushing Image...'
-                withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                    sh "docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG"
-                    sh "docker push $DOCKERHUB_USERNAME/$IMAGE_NAME:latest"
+                echo 'Pushing to Registry...'
+                // We use the 'docker-hub-repo' credentials ID we created in Jenkins
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+                    sh "echo ${env.DOCKER_PASS} | docker login -u ${env.DOCKER_USER} --password-stdin"
+                    sh "docker push ${env.DOCKERHUB_USERNAME}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
+                    sh "docker push ${env.DOCKERHUB_USERNAME}/${env.IMAGE_NAME}:latest"
                 }
             }
         }
-
+        
         stage('Deploy to Server') {
+            // This stage ONLY runs on the 'main' branch
+            when {
+                branch 'main'
+            }
             steps {
                 script {
-                    input message: 'Deploy to Production?', ok: 'Yes, Go Ahead'
-                    echo 'Deploying To Production Server...'
-
-                    // Stop old container if running
-                    sh "docker stop $CONTAINER_NAME || true"
-
-                    // Remove old container
-                    sh "docker rm $CONTAINER_NAME || true"
-
-                    // Run new container on port 8090
-                    sh "docker run -d -p 8090:80 --name $CONTAINER_NAME $DOCKERHUB_USERNAME/$IMAGE_NAME:$IMAGE_TAG"
+                    // Manual Approval Gate
+                    input message: 'Deploy to Production?', ok: 'Yes, Go Ahead!'
+                    
+                    echo 'Deploying to Production Server...'
+                    
+                    // 1. Stop the old container (if running)
+                    sh "docker stop ${env.CONTAINER_NAME} || true"
+                    
+                    // 2. Remove the old container
+                    sh "docker rm ${env.CONTAINER_NAME} || true"
+                    
+                    // 3. Run the new container on Port 8090
+                    sh "docker run -d -p 8090:80 --name ${env.CONTAINER_NAME} ${env.DOCKERHUB_USERNAME}/${env.IMAGE_NAME}:latest"
                 }
             }
         }
     }
-
+    
     post {
         success {
-            mail(
-                to: 'yashsingar7@gmail.com',
-                subject: "SUCCESS: Jenkins Build #${env.BUILD_NUMBER}",
-                body: "Great News! Build #${env.BUILD_NUMBER} for ${env.JOB_NAME} was successful!\n\nView build: ${env.BUILD_URL}"
-            )
+            mail body: "Great News! Build #${env.BUILD_NUMBER} for ${env.JOB_NAME} was SUCCESSFUL.\n\nCheck the dashboard here: ${env.BUILD_URL}",
+                     subject: "SUCCESS: Jenkins Build #${env.BUILD_NUMBER}",
+                     to: "${env.USER_EMAIL}"
         }
-
         failure {
-            mail(
-                to: 'yashsingar7@gmail.com',
-                subject: "FAILURE: Jenkins Build #${env.BUILD_NUMBER}",
-                body: "Alert! Build #${env.BUILD_NUMBER} for ${env.JOB_NAME} has failed!\n\nView details: ${env.BUILD_URL}"
-            )
+            mail body: "Alert! Build #${env.BUILD_NUMBER} for ${env.JOB_NAME} FAILED.\n\nPlease check logs here: ${env.BUILD_URL}",
+                     subject: "FAILURE: Jenkins Build #${env.BUILD_NUMBER}",
+                     to: "${env.USER_EMAIL}"
+        }
+        always {
+            // Cleanup: Log out of Docker to be safe
+            sh "docker logout"
         }
     }
 }
-
