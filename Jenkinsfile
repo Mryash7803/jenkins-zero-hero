@@ -36,6 +36,25 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to Server') {
+            steps {
+                echo 'Deploying to Local Server...'
+                script {
+                    // 1. Stop the old container (if running)
+                    // "|| true" prevents the pipeline from failing if the container doesn't exist yet
+                    sh "docker stop $CONTAINER_NAME || true"
+                    
+                    // 2. Remove the old container
+                    sh "docker rm $CONTAINER_NAME || true"
+                    
+                    // 3. Run the new container on Port 8090
+                    sh "docker run -d -p 8090:80 --name $CONTAINER_NAME $DOCKERHUB_USERNAME/$IMAGE_NAME:latest"
+                }
+            }
+        }
+    }
+
     }
     
     post {
