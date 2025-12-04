@@ -43,7 +43,7 @@ pipeline {
          
                 script {
 
-                    input: 'Deploy to Production?' , ok: 'Yes, Go Ahead!'
+                    input message: 'Deploy to Production?' , ok: 'Yes, Go Ahead!'
                     echo 'Deploying To Production Server...'
                     // 1. Stop the old container (if running)
                     // "|| true" prevents the pipeline from failing if the container doesn't exist yet
